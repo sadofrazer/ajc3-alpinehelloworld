@@ -70,7 +70,9 @@ pipeline{
                        heroku create $STAGING || echo "project already exist"
                        heroku container:push -a $STAGING web
                        heroku container:release -a $STAGING web
+                       
                     '''
+                    slackSend (color: '#00F000', message: "TEST: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' (${env.BUILD_URL})")
                 }
             }
         }
