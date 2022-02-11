@@ -126,7 +126,7 @@ pipeline{
                 }
             }
             when{
-                expression{ GIT_BRANCH == 'origin/master' && DEPLOY_APP != 'yes'}
+                expression{ GIT_BRANCH == 'origin/master'}
             }
             steps{
                 withCredentials([sshUserPrivateKey(credentialsId: "ec2_prod_private_key", keyFileVariable: 'keyfile', usernameVariable: 'NUSER')]) {
