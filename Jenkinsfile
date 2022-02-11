@@ -9,6 +9,7 @@ pipeline{
         CONTAINER_NAME = "alpinehelloworld"
         STAGING = "frazer-staging-env"
         PRODUCTION ="frazer-prod-env"
+        EC2_PRODUCTION_HOST= "52.70.122.139"
     }
 
     agent any
@@ -57,9 +58,6 @@ pipeline{
 
         stage ('deploy app on staging env'){
             agent any
-            when {
-                expression { GIT_BRANCH == 'origin/master'}
-            }
             environment{
                 HEROKU_API_KEY = credentials('heroku_api_key')
             }
@@ -77,7 +75,7 @@ pipeline{
             }
         }
 
-        stage ('deploy app on Prod env'){
+        stage ('deploy app on preprod env'){
             agent any
             when {
                 expression { GIT_BRANCH == 'origin/master'}
@@ -87,9 +85,6 @@ pipeline{
             }
             steps{
                 script{
-                    timeout(time: 15, unit: "MINUTES") {
-                        input message: 'Do you want to approve the deploy in production?', ok: 'Yes'
-                    }	
                     sh '''
                        heroku container:login
                        heroku create $PRODUCTION || echo "project already exist"
@@ -100,6 +95,27 @@ pipeline{
             }
         }
 
+        stage ('deploy app on Prod env'){
+            agent any
+            when {
+                expression { GIT_BRANCH == 'origin/master'}
+            }
+            environment{
+                HEROKU_API_KEY = credentials('heroku_api_key')
+            }
+            steps{
+                withCredentials([sshUserPrivateKey(credentialsId: "ec2_prod_private_key", keyFileVariable: 'keyfile', usernameVariable: 'NUSER')]) {
+                    script{
+                        timeout(time: 15, unit: "MINUTES") {
+                            input message: 'Do you want to approve the deploy in production?', ok: 'Yes'
+                        }	
+                        sh '''
+                           ssh -o StrictHostKeyChecking=no -i ${keyfile} ${NUSER}@${EC2_PRODUCTION_HOST} docker run --name $CONTAINER_NAME -d -e PORT=5000 -p 5000:5000 $USERNAME/$IMAGE_NAME:$IMAGE_TAG 
+                        '''
+                    }
+                }
+            }
+        }
 
     }
 
