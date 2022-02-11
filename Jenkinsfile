@@ -4,7 +4,7 @@ pipeline{
 
     environment{
         IMAGE_NAME = "alpinehelloworld"
-        IMAGE_TAG = "latest"
+        IMAGE_TAG = "${BUILD_TAG}"
         USERNAME = "sadofrazer"
         CONTAINER_NAME = "alpinehelloworld"
         STAGING = "frazer-staging-env"
@@ -17,6 +17,7 @@ pipeline{
     stages{
 
         stage ('Build image'){
+            agent{ label 'test'}
             steps{
                 script{
                     sh 'docker build -t ${USERNAME}/${IMAGE_NAME}:${IMAGE_TAG} .'
@@ -25,6 +26,7 @@ pipeline{
         }
 
         stage ('Run a container and Test Image'){
+            agent{ label 'test'}
             steps{
                 script{
                     sh '''
@@ -39,7 +41,7 @@ pipeline{
         }
 
         stage ('save artifact and clean env'){
-            agent any
+            agent{ label 'test'}
             environment{
                 PASSWORD = credentials('dockerhub_password')
             }
@@ -57,7 +59,6 @@ pipeline{
         }
 
         stage ('deploy app on staging env'){
-            agent any
             environment{
                 HEROKU_API_KEY = credentials('heroku_api_key')
             }
